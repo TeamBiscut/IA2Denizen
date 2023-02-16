@@ -1,0 +1,4 @@
+name: IA2Denizen
+version: '${version}'
+main: net.biscut.ia2denizen.IA2Denizen
+api-version: 1.19
