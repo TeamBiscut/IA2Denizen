@@ -1,40 +1,53 @@
 package net.biscut.ia2denizen.objects.itemsadder;
 
 import com.denizenscript.denizen.objects.ItemTag;
+import com.denizenscript.denizencore.objects.Adjustable;
 import com.denizenscript.denizencore.objects.Fetchable;
+import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagContext;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import dev.lone.itemsadder.api.CustomStack;
 import org.bukkit.inventory.ItemStack;
 
-public class ItemsAdderTag implements ObjectTag {
-    public static ItemsAdderTag valueOf(String item) {
-        return ItemsAdderTag.valueOf(item, null);
+public class ItemsAdderTag implements ObjectTag, Adjustable {
+    public static ItemsAdderTag valueOf(String p0) {
+        return ItemsAdderTag.valueOf(p0, null);
     }
 
     @Fetchable("ia")
-    public static ItemsAdderTag valueOf(String item, TagContext ctx) {
-        if (item == null || item.length() == 0) {
-            return null;
+    public static ItemsAdderTag valueOf(String p0, TagContext p1) {
+        Debug.log("Running value of command: " + p0);
+
+        if (p0.startsWith("ia@")) {
+            p0 = p0.substring("ia@".length());
+            Debug.log("Starts with ia@ -> " + p0);
         }
 
-        item = item.replace("ia@", "").replace("!", ":");
-        CustomStack customStack = CustomStack.getInstance(item);
+        p0 = p0.replace("~", ":");
+
+        CustomStack customStack = CustomStack.getInstance(p0);
 
         if (customStack == null) {
+            Debug.log("Invalid item name " + p0);
             return null;
         }
 
+        Debug.log("Returning item " + customStack.getDisplayName());
         return new ItemsAdderTag(customStack);
     }
 
     public static boolean matches(String arg) {
-        arg = arg.replace("ia@", "");
-        return ItemsAdderTag.valueOf(arg) != null;
+        return valueOf(arg) != null;
     }
+
+    /*
+        Constructor
+     */
 
     public static ObjectTagProcessor<ItemsAdderTag> tagProcessor = new ObjectTagProcessor<>();
     private CustomStack customItemStack;
@@ -48,9 +61,31 @@ public class ItemsAdderTag implements ObjectTag {
         }
     }
 
+    /*
+        Instance Fields
+     */
+
+    public CustomStack getCustomItemStack() {
+        return customItemStack;
+    }
+
+    public ItemStack getItemStack() {
+        return customItemStack.getItemStack();
+    }
+
+    /*
+        Object Tag
+     */
+
     @Override
     public String getPrefix() {
         return prefix;
+    }
+
+    @Override
+    public ObjectTag setPrefix(String prefix) {
+        this.prefix = prefix;
+        return this;
     }
 
     @Override
@@ -69,34 +104,29 @@ public class ItemsAdderTag implements ObjectTag {
     }
 
     @Override
-    public ObjectTag setPrefix(String prefix) {
-        this.prefix = prefix;
-        return this;
-    }
-
-    @Override
     public String toString() {
         return identify();
     }
 
-    public CustomStack getCustomItemStack() {
-        return customItemStack;
-    }
-
-    public ItemStack getItemStack() {
-        return customItemStack.getItemStack();
-    }
-
-    public static void register() {
-        tagProcessor.registerTag(ItemTag.class, "item_stack", ((attribute, object) -> {
-            return new ItemTag(object.getItemStack());
-        }));
-    }
-
-
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
         return tagProcessor.getObjectAttribute(this, attribute);
+    }
 
+    @Override
+    public void applyProperty(Mechanism mechanism) {
+        mechanism.echoError("Cannot apply properties to a Items Adder Item!");
+    }
+
+    public static void register() {
+        PropertyParser.registerPropertyTagHandlers(ItemsAdderTag.class, tagProcessor);
+
+        tagProcessor.registerTag(ItemTag.class, "as_item_tag", ((attribute, object) -> new ItemTag(object.getItemStack())));
+    }
+
+    @Override
+    public void adjust(Mechanism mechanism) {
+        tagProcessor.processMechanism(this, mechanism);
+        CoreUtilities.autoPropertyMechanism(this, mechanism);
     }
 }
