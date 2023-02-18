@@ -28,8 +28,6 @@ public class ItemsAdderTag implements ObjectTag, Adjustable {
             Debug.log("Starts with ia@ -> " + p0);
         }
 
-        p0 = p0.replace("~", ":");
-
         CustomStack customStack = CustomStack.getInstance(p0);
 
         if (customStack == null) {
@@ -40,6 +38,7 @@ public class ItemsAdderTag implements ObjectTag, Adjustable {
         Debug.log("Returning item " + customStack.getDisplayName());
         return new ItemsAdderTag(customStack);
     }
+
 
     public static boolean matches(String arg) {
         return valueOf(arg) != null;
